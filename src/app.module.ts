@@ -5,6 +5,7 @@ import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     TasksModule,
     NotificationsModule,
     AnalyticsModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],
