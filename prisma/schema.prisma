@@ -97,7 +97,7 @@ model Task {
   createdById         Int?
   createdBy           User?             @relation("CreatedTasks", fields: [createdById], references: [id])
 
-  subTasks            SubTask[]
+  subtasks            SubTask[]
   notifications       Notification[]    @relation("TaskNotifications")
   occurrences         TaskOccurrence[]  // ✅ Opposite relation for TaskOccurrence
 
