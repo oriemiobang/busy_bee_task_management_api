@@ -21,6 +21,7 @@ export interface MulterFile {
 @Injectable()
 export class UsersService {
     private bucket = process.env.SUPABASE_BUCKET!;
+    
 
     constructor(private prisma: PrismaService, private jwtService: JwtService){}
 
@@ -40,7 +41,13 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(payload.password, 10);
     payload.password = hashedPassword;
         return  await this.prisma.user.create({
-            data: payload,
+            data: {
+              name: payload.name,
+              email: payload.email,
+              password: payload.password,
+              auth_provider: payload.auth_provider
+
+            },
             select: {
                 id: true,
                 email: true,
@@ -72,7 +79,7 @@ export class UsersService {
         id: user.id,
         email: user.email,
         name: user.name,
-        imageUrl: user.profile_image_url ?? "https://zraflqvymigtirrotmko.supabase.co/storage/v1/object/public/busy_bee_bucket/avatars/2/wanderercreative-blank-profile-picture-973460_1280.png"
+        imageUrl: user.profile_image_url 
     })
 
     return {accessToken: token}
