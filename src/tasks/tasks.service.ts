@@ -39,7 +39,7 @@ export class TasksService {
         recurrenceEndDate: payload.recurrenceEndDate ? new Date(payload.recurrenceEndDate) : null,
         
         // Subtasks
-        subTasks: payload.subtasks?.length
+        subtasks: payload.subtasks?.length
           ? {
               create: payload.subtasks.map(subtask => ({
                 title: subtask.title.trim(),
@@ -52,7 +52,7 @@ export class TasksService {
         userId,
       },
       include: {
-        subTasks: true,
+        subtasks: true,
         user: {
           select: { id: true, name: true, email: true },
         },
@@ -125,7 +125,7 @@ export class TasksService {
       where: { id: taskId },
       data: updateData,
       include: {
-        subTasks: { orderBy: { id: 'asc' } },
+        subtasks: { orderBy: { id: 'asc' } },
         user: { select: { id: true, name: true, email: true } },
       },
     });
@@ -153,7 +153,7 @@ export class TasksService {
     const tasks = await this.prisma.task.findMany({
       where: { userId },
       include: {
-        subTasks: { orderBy: { id: 'asc' } },
+        subtasks: { orderBy: { id: 'asc' } },
         user: { select: { id: true, name: true, email: true } },
         // ✅ INCLUDE NOTIFICATIONS FOR CONTEXT (optional)
         // notifications: {
