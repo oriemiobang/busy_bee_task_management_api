@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Put, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { SignUpDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
 import { UsersService } from './users.service';
@@ -6,6 +6,8 @@ import { Public } from './auth/public.decorator';
 import { UpdateNameDto } from './dto/update_name.dto';
 
 import { UpdatePasswordDto } from './dto/update_password.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { File as MulterFile } from 'multer';
 
 @Controller('auth')
 export class UsersController {
@@ -51,6 +53,25 @@ export class UsersController {
         body.newPassword,
         );
     }
+
+    @UseInterceptors(FileInterceptor('avatar'))
+    @Post('avatar')
+    addAvatar(
+    @Req() req,
+    @UploadedFile() file: MulterFile,
+    ) {
+    return this.userService.addAvatar(req.user.id, file);
+    }
+
+    @UseInterceptors(FileInterceptor('avatar'))
+    @Put('avatar')
+    updateAvatar(
+    @Req() req,
+    @UploadedFile() file: MulterFile,
+    ) {
+    return this.userService.updateAvatar(req.user.id, file);
+    }
+
 
 
 }

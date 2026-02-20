@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 
 import { TasksDto } from './dto/tasks.dto';
 import { TasksService } from './tasks.service';
@@ -19,9 +19,13 @@ export class TasksController {
 
     // update task
     @Patch('/update-task/:id')
-     async  updateTask(@Body() body: TasksDto, @Param('id') taskId: number){
-        return await this.taskService.updateTask(body, +taskId );
-    }
+      async updateTask(
+    @Param('id') taskId: number,
+    @Body() body: TasksDto,
+    @Req() req,
+  ) {
+    return this.taskService.updateTask(body, +taskId, req.user.id);
+  }
 
     // get tasks
     @Get('/get-tasks')
@@ -37,23 +41,31 @@ export class TasksController {
     }
 
 
-    @Patch('/update-sort-order/:id')
-    async updateSortOrder(@Param('id') taskId:number, @Body('sort_order') sortId: number, @Req() req){
-       return this.taskService.updateTaskOrder(+taskId, req.user.id,+sortId)
-
-    }
-
     @Patch('/update-status/:id')
-    async updateStatus (@Param('id') taskId: number, @Body('status') status: Status_Enum, @Req() req){
-       return await  this.taskService.updateStatus(req.user.id, +taskId, status)
+     async updateStatus(
+    @Param('id') taskId: number,
+    @Body('status') status: Status_Enum,
+    @Req() req,
+  ) {
+    if (!status || !Object.values(Status_Enum).includes(status)) {
+      throw new BadRequestException('Valid status is required');
     }
-
+    return this.taskService.updateStatus(req.user.id, +taskId, status);
+  }
 
     @Patch('/update-subTask/:taskId/subtask/:subTaskId')
-    updateSubTask(@Param('taskId') taskId: number,
+    async updateSubTask(
+    @Param('taskId') taskId: number,
     @Param('subTaskId') subTaskId: number,
-    @Body() dto: SubTaskDto,){ 
-       return this.taskService.updateSubTask(+taskId, +subTaskId, dto);
-}
+    @Body() dto: SubTaskDto,
+    @Req() req,
+  ) {
+    return this.taskService.updateSubTask(+taskId, +subTaskId, req.user.id, dto);
+  }
+
+    @Get('upcoming/notifications')
+  async getUpcomingTasksForNotifications() {
+    return this.taskService.getUpcomingTasksForNotifications();
+  }
     
 }

@@ -1,18 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// generator client {
-//   provider = "prisma-client"
-//   output   = "../generated/prisma"
-// }
-
-// datasource db {
-//   provider = "postgresql"
-// }
-
+// Prisma schema file
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -21,6 +7,8 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+// -------------------- ENUMS --------------------
 
 enum Auth_Provider {
   LOCAL
@@ -34,56 +22,152 @@ enum Status_Enum {
   COMPLETED
 }
 
+enum Recurrence_Type {
+  ONCE
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum Day_Of_Week {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+enum Notification_Type {
+  TASK_DUE
+  TASK_REMINDER
+  TASK_COMPLETED
+  RECURRING_TASK
+  SYSTEM
+}
+
+// -------------------- MODELS --------------------
+
 model User {
-  id                Int           @id @default(autoincrement())
+  id                Int              @id @default(autoincrement())
   name              String
-  email             String        @unique
+  email             String           @unique
   password          String
   auth_provider     Auth_Provider
-  profile_image_url String?
-  task              Task[]
-  notification      Notification[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  profile_image_url String?          @default("https://zraflqvymigtirrotmko.supabase.co/storage/v1/object/public/busy_bee_bucket/avatars/2/wanderercreative-blank-profile-picture-973460_1280.png")
+  
+  // Relations
+  tasks             Task[]           // Tasks assigned to user
+  createdTasks      Task[]           @relation("CreatedTasks") // Tasks created by user
+  notifications     Notification[]
+  
+  // Timestamps
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  // Notification preferences
+  notificationEmail Boolean          @default(true)
+  notificationPush  Boolean          @default(true)
+  reminderMinutes   Int              @default(30)
+  
+  @@map("users")
 }
 
 model Task {
-  id          Int         @id @default(autoincrement())
-  title       String
-  description String
-  start_time  DateTime
-  deadline    DateTime?
-  sort_order  Int
-  status      Status_Enum
+  id                  Int               @id @default(autoincrement())
+  title               String
+  description         String            @default("")
+  start_time          DateTime
+  deadline            DateTime?
+  status              Status_Enum       @default(UPCOMING)
+  
+  // Recurrence fields
+  recurrenceType      Recurrence_Type?  @default(ONCE)
+  recurrenceInterval  Int?              @default(1)
+  recurrenceDays      Day_Of_Week[]     @default([]) // ✅ Fixed optional list
+  recurrenceDayOfMonth Int?             @default(1)
+  recurrenceEndDate   DateTime?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  userId    Int
-  subTask   SubTask[]
+  // Relations
+  userId              Int
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdById         Int?
+  createdBy           User?             @relation("CreatedTasks", fields: [createdById], references: [id])
+
+  subTasks            SubTask[]
+  notifications       Notification[]    @relation("TaskNotifications")
+  occurrences         TaskOccurrence[]  // ✅ Opposite relation for TaskOccurrence
+
+  // Timestamps
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  // Indexes
+  @@index([userId, status])
+  @@index([start_time])
+  @@index([recurrenceType, recurrenceEndDate])
+  @@map("tasks")
 }
 
 model SubTask {
-  id     Int      @id @default(autoincrement())
-  title  String
-  isDone Boolean? @default(false)
-  taskId Int
-  task   Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  title     String
+  isDone    Boolean  @default(false)
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
   createdAt DateTime @default(now())
-  updatedAt DateTime? @updatedAt
+  updatedAt DateTime @updatedAt
+  
+  @@index([taskId])
+  @@map("sub_tasks")
 }
 
-
 model Notification {
-  id Int @id @default(autoincrement())
-  title String
-  description String
-  isRead Boolean? @default(false)
-  userId Int
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime? @updatedAt
+  id            Int                @id @default(autoincrement())
+  title         String
+  description   String
+  type          Notification_Type  @default(SYSTEM)
+  isRead        Boolean            @default(false)
+  
+  // Task relation
+  taskId        Int?               // Nullable - not all notifications are task-related
+  task          Task?              @relation("TaskNotifications", fields: [taskId], references: [id], onDelete: SetNull)
+  
+  // Relations
+  userId        Int
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  triggerTime   DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  
+  // Action tracking
+  actionUrl     String?
+  actionType    String?
+  
+  @@index([userId, isRead])
+  @@index([triggerTime])
+  @@index([taskId])
+  @@map("notifications")
+}
 
+model TaskOccurrence {
+  id            Int        @id @default(autoincrement())
+  taskId        Int
+  task          Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  occurrenceDate DateTime
+  status        Status_Enum @default(UPCOMING)
+  
+  createdAt     DateTime   @default(now())
+  completedAt   DateTime?
+
+  @@index([taskId, occurrenceDate])
+  @@index([occurrenceDate])
+  @@unique([taskId, occurrenceDate])
+  @@map("task_occurrences")
 }
