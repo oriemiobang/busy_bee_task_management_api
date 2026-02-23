@@ -153,7 +153,7 @@ export class TasksService {
     const tasks = await this.prisma.task.findMany({
       where: { userId },
       include: {
-        subtasks: { orderBy: { id: 'asc' } },
+        subtasks: true,
         user: { select: { id: true, name: true, email: true } },
         // ✅ INCLUDE NOTIFICATIONS FOR CONTEXT (optional)
         // notifications: {

@@ -8,6 +8,7 @@ import { UpdateNameDto } from './dto/update_name.dto';
 import { UpdatePasswordDto } from './dto/update_password.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { File as MulterFile } from 'multer';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class UsersController {
@@ -72,6 +73,20 @@ export class UsersController {
     return this.userService.updateAvatar(req.user.id, file);
     }
 
+    // google sign in 
+    @Get()
+    @UseGuards(AuthGuard('google'))
+    googleAuth(@Req() req) {
+        // initiates the Google OAuth2 login flow
+        
+    }
+
+
+    @Get('auth/google/callback')
+    @UseGuards(AuthGuard('google'))
+    googleAuthRedirect(@Req() req) {
+        return this.userService.googleLogin(req);
+    }   
 
 
 }
