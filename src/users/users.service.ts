@@ -6,7 +6,9 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'crypto';
 import { supabase } from 'src/supabase/supabase.client';
+import { OAuth2Client } from 'google-auth-library';
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Define MulterFile type
 export interface MulterFile {
   fieldname: string;
@@ -292,6 +294,55 @@ googleLogin(req){
     message: 'User information from google',
     user: req.user
   }
+}
+
+
+
+async googleMobileLogin(idToken: string) {
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+
+  if (!payload) {
+    throw new UnauthorizedException('Invalid Google token');
+  }
+
+  const { email, name, picture } = payload;
+
+  if (!email) {
+    throw new UnauthorizedException('Google account does not have an email');
+  }
+
+  let user = await this.prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    user = await this.prisma.user.create({
+      data: {
+        email,
+        name: name ?? '',
+        profile_image_url: picture,
+        auth_provider: 'GOOGLE',
+        password: '', // no password for google users
+      },
+    });
+  }
+
+  const accessToken = await this.jwtService.signAsync({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    imageUrl: user.profile_image_url,
+  });
+
+  return {
+    accessToken,
+    user,
+  };
 }
 
 }

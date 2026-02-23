@@ -78,15 +78,14 @@ export class UsersController {
     @UseGuards(AuthGuard('google'))
     googleAuth(@Req() req) {
         // initiates the Google OAuth2 login flow
-        
+
     }
 
 
-    @Get('auth/google/callback')
-    @UseGuards(AuthGuard('google'))
-    googleAuthRedirect(@Req() req) {
-        return this.userService.googleLogin(req);
-    }   
-
+@Public()
+@Post('google')
+async googleMobileLogin(@Body('idToken') idToken: string) {
+  return this.userService.googleMobileLogin(idToken);
+}
 
 }
