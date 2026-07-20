@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Patch, Post, Put, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { IsString, IsNotEmpty } from 'class-validator';
 import { SignUpDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
 import { UsersService } from './users.service';
@@ -92,5 +93,11 @@ export class UsersController {
 async googleMobileLogin(@Body('idToken') idToken: string) {
   return this.userService.googleMobileLogin(idToken);
 }
+
+    // Register or update device FCM token for push notifications
+    @Patch('fcm-token')
+    updateFcmToken(@Body('fcmToken') fcmToken: string, @Req() req) {
+        return this.userService.updateFcmToken(req.user.id, fcmToken);
+    }
 
 }

@@ -21,7 +21,7 @@
 
 ---
 
-### Issue #1: Hardcoded Secrets & Credentials Exposed in Source Code
+### ✅ Issue #1: Hardcoded Secrets & Credentials Exposed in Source Code
 
 **Labels:** `critical` `security` `backend` `frontend`
 
