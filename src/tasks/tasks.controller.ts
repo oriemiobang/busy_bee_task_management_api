@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards, Query } from '@nestjs/common';
 
 import { TasksDto } from './dto/tasks.dto';
 import { TasksService } from './tasks.service';
@@ -68,4 +68,15 @@ export class TasksController {
     return this.taskService.getUpcomingTasksForNotifications();
   }
     
+  @Get('occurrences')
+  async getOccurrences(
+    @Req() req,
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ) {
+    if (!start || !end) {
+      throw new BadRequestException('Start and end dates are required');
+    }
+    return this.taskService.getOccurrences(req.user.id, new Date(start), new Date(end));
+  }
 }

@@ -7,6 +7,8 @@ import { JwtAuthGuard } from 'src/users/auth/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 
 
+import { RecurrenceService } from './recurrence.service';
+
 @Module({
     controllers: [TasksController],
     providers: [
@@ -15,6 +17,9 @@ import { APP_GUARD } from '@nestjs/core';
             provide: APP_GUARD,
             useClass: JwtAuthGuard,
           },
-        PrismaService, TasksService]
+        PrismaService, 
+        TasksService,
+        RecurrenceService
+    ]
 })
 export class TasksModule {}

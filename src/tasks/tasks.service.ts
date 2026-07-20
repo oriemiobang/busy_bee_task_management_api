@@ -3,9 +3,14 @@ import { PrismaService } from 'src/prisma.service';
 import { TasksDto } from './dto/tasks.dto';
 import { Status_Enum, Recurrence_Type, Day_Of_Week } from '@prisma/client';
 
+import { RecurrenceService } from './recurrence.service';
+
 @Injectable()
 export class TasksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private recurrenceService: RecurrenceService
+  ) {}
 
   async addTask(payload: TasksDto, userId: number) {
     // Validate recurrence days if provided
@@ -23,7 +28,7 @@ export class TasksService {
       throw new BadRequestException(`Invalid recurrence type: ${payload.recurrenceType}`);
     }
 
-    return this.prisma.task.create({
+    const task = await this.prisma.task.create({
       data: {
         title: payload.title?.trim() || 'Untitled Task',
         description: payload.description?.trim() || '',
@@ -58,6 +63,16 @@ export class TasksService {
         },
       },
     });
+
+    if (task.recurrenceType !== Recurrence_Type.ONCE) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const lookAheadDate = new Date(now);
+      lookAheadDate.setDate(lookAheadDate.getDate() + 30);
+      await this.recurrenceService.generateForTask(task as any, now, lookAheadDate);
+    }
+
+    return task;
   }
 
   // ✅ PARTIAL UPDATE WITH VALIDATION (critical fix)
@@ -257,5 +272,31 @@ export class TasksService {
         },
       },
     });
+  }
+
+  async getOccurrences(userId: number, start: Date, end: Date) {
+    // End date should include the full day
+    const endDate = new Date(end);
+    endDate.setHours(23, 59, 59, 999);
+
+    const occurrences = await this.prisma.taskOccurrence.findMany({
+      where: {
+        task: { userId },
+        occurrenceDate: {
+          gte: start,
+          lte: endDate,
+        },
+      },
+      include: {
+        task: {
+          include: { subtasks: true }
+        }
+      },
+      orderBy: {
+        occurrenceDate: 'asc',
+      },
+    });
+
+    return occurrences;
   }
 }
