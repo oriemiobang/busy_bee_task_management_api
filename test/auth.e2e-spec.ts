@@ -1,14 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+const request = require('supertest');
 import { AppModule } from './../src/app.module';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
-  
-  // We mock PrismaService to prevent real DB inserts during e2e testing,
-  // or we can test against a real test database.
-  // For simplicity, we assume the test suite will run against a clean database.
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -16,6 +12,7 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
     await app.init();
   });
 

@@ -38,7 +38,7 @@ describe('TasksService', () => {
       expect(prisma.task.findMany).toHaveBeenCalledWith({
         where: { userId: 1 },
         include: { subtasks: true, user: { select: { email: true, id: true, name: true } } },
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ start_time: 'asc' }, { createdAt: 'desc' }],
       });
     });
   });
@@ -68,12 +68,12 @@ describe('TasksService', () => {
     });
 
     it('should delete task successfully', async () => {
-      prisma.task.findFirst.mockResolvedValueOnce({ id: 1, userId: 1 });
+      prisma.task.findUnique.mockResolvedValueOnce({ id: 1, userId: 1 });
       prisma.task.delete.mockResolvedValueOnce({ id: 1 });
 
       const result = await service.deleteTask(1, 1);
       expect(prisma.task.delete).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(result).toEqual({ message: 'Task removed' });
+      expect(result).toEqual({ message: 'Task deleted successfully' });
     });
   });
 });

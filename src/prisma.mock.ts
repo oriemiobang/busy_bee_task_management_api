@@ -28,7 +28,9 @@ export const mockPrismaService = {
   notification: {
     findMany: jest.fn(),
     findFirst: jest.fn(),
+    findUnique: jest.fn(),
     update: jest.fn(),
+    deleteMany: jest.fn(),
   },
   $transaction: jest.fn((callback) => callback(mockPrismaService)),
 };
