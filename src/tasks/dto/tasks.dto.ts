@@ -1,4 +1,12 @@
-import { IsEnum, IsOptional, IsArray, ValidateNested, IsDateString, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsDateString,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { Status_Enum, Recurrence_Type, Day_Of_Week } from '@prisma/client';
 import { SubTaskDto } from './sub_task.dto';

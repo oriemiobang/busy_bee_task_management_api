@@ -21,7 +21,7 @@ export class MailService {
   async sendPasswordResetEmail(to: string, token: string) {
     // In a real app, this would point to a frontend route like /reset-password?token=123
     const resetLink = `${process.env.API_URL || 'http://localhost:3000'}/auth/reset-password?token=${token}`;
-    
+
     try {
       await this.transporter.sendMail({
         from: `"${process.env.SMTP_FROM_NAME || 'Busy Bee'}" <${process.env.SMTP_FROM || 'noreply@busybee.com'}>`,

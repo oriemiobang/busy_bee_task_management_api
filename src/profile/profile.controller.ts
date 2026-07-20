@@ -14,9 +14,6 @@ export class ProfileController {
 
   @Put('/avatar')
   updateAvatar(@Req() req, @Body() body: { imageUrl: string }) {
-    return this.profileService.updateAvatar(
-      req.user.id,
-      body.imageUrl,
-    );
+    return this.profileService.updateAvatar(req.user.id, body.imageUrl);
   }
 }

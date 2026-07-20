@@ -9,8 +9,11 @@ export class FirebaseService {
   constructor() {
     if (!admin.apps.length) {
       try {
-        const serviceAccountPath = path.join(process.cwd(), 'busy-bee-7e457-firebase-adminsdk-fbsvc-c0e02d669f.json');
-        
+        const serviceAccountPath = path.join(
+          process.cwd(),
+          'busy-bee-7e457-firebase-adminsdk-fbsvc-c0e02d669f.json',
+        );
+
         admin.initializeApp({
           credential: admin.credential.cert(require(serviceAccountPath)),
         });
@@ -21,9 +24,14 @@ export class FirebaseService {
     }
   }
 
-  async sendPushNotification(fcmToken: string, title: string, body: string, data?: any) {
+  async sendPushNotification(
+    fcmToken: string,
+    title: string,
+    body: string,
+    data?: any,
+  ) {
     if (!fcmToken) return null;
-    
+
     try {
       const response = await admin.messaging().send({
         token: fcmToken,

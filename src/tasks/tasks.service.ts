@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { TasksDto } from './dto/tasks.dto';
 import { Status_Enum, Recurrence_Type, Day_Of_Week } from '@prisma/client';
@@ -9,23 +14,30 @@ import { RecurrenceService } from './recurrence.service';
 export class TasksService {
   constructor(
     private prisma: PrismaService,
-    private recurrenceService: RecurrenceService
+    private recurrenceService: RecurrenceService,
   ) {}
 
   async addTask(payload: TasksDto, userId: number) {
     // Validate recurrence days if provided
     if (payload.recurrenceDays && payload.recurrenceDays.length > 0) {
       const invalidDays = payload.recurrenceDays.filter(
-        day => !Object.values(Day_Of_Week).includes(day as Day_Of_Week)
+        (day) => !Object.values(Day_Of_Week).includes(day),
       );
       if (invalidDays.length > 0) {
-        throw new BadRequestException(`Invalid recurrence days: ${invalidDays.join(', ')}`);
+        throw new BadRequestException(
+          `Invalid recurrence days: ${invalidDays.join(', ')}`,
+        );
       }
     }
 
     // Validate recurrence type
-    if (payload.recurrenceType && !Object.values(Recurrence_Type).includes(payload.recurrenceType)) {
-      throw new BadRequestException(`Invalid recurrence type: ${payload.recurrenceType}`);
+    if (
+      payload.recurrenceType &&
+      !Object.values(Recurrence_Type).includes(payload.recurrenceType)
+    ) {
+      throw new BadRequestException(
+        `Invalid recurrence type: ${payload.recurrenceType}`,
+      );
     }
 
     const task = await this.prisma.task.create({
@@ -35,24 +47,26 @@ export class TasksService {
         status: payload.status || Status_Enum.UPCOMING,
         start_time: new Date(payload.start_time || new Date()),
         deadline: payload.deadline ? new Date(payload.deadline) : null,
-        
+
         // ✅ RECURRENCE FIELDS (with defaults matching Prisma schema)
         recurrenceType: payload.recurrenceType || Recurrence_Type.ONCE,
         recurrenceInterval: payload.recurrenceInterval ?? 1,
-        recurrenceDays: payload.recurrenceDays as Day_Of_Week[] || [],
+        recurrenceDays: (payload.recurrenceDays as Day_Of_Week[]) || [],
         recurrenceDayOfMonth: payload.recurrenceDayOfMonth ?? 1,
-        recurrenceEndDate: payload.recurrenceEndDate ? new Date(payload.recurrenceEndDate) : null,
-        
+        recurrenceEndDate: payload.recurrenceEndDate
+          ? new Date(payload.recurrenceEndDate)
+          : null,
+
         // Subtasks
         subtasks: payload.subtasks?.length
           ? {
-              create: payload.subtasks.map(subtask => ({
+              create: payload.subtasks.map((subtask) => ({
                 title: subtask.title.trim(),
                 isDone: subtask.isDone ?? false,
               })),
             }
           : undefined,
-        
+
         // Relations
         userId,
       },
@@ -69,7 +83,11 @@ export class TasksService {
       now.setHours(0, 0, 0, 0);
       const lookAheadDate = new Date(now);
       lookAheadDate.setDate(lookAheadDate.getDate() + 30);
-      await this.recurrenceService.generateForTask(task as any, now, lookAheadDate);
+      await this.recurrenceService.generateForTask(
+        task as any,
+        now,
+        lookAheadDate,
+      );
     }
 
     return task;
@@ -83,56 +101,70 @@ export class TasksService {
     });
 
     if (!task) throw new NotFoundException('Task not found');
-    if (task.userId !== userId) throw new ForbiddenException('Not authorized to update this task');
+    if (task.userId !== userId)
+      throw new ForbiddenException('Not authorized to update this task');
 
     // Build update data conditionally (only include provided fields)
     const updateData: any = {};
-    
+
     if (payload.title !== undefined) updateData.title = payload.title.trim();
-    if (payload.description !== undefined) updateData.description = payload.description.trim() || '';
+    if (payload.description !== undefined)
+      updateData.description = payload.description.trim() || '';
     if (payload.status !== undefined) updateData.status = payload.status;
-    if (payload.start_time !== undefined) updateData.start_time = new Date(payload.start_time);
+    if (payload.start_time !== undefined)
+      updateData.start_time = new Date(payload.start_time);
     if (payload.deadline !== undefined) {
-      updateData.deadline = payload.deadline ? new Date(payload.deadline) : null;
+      updateData.deadline = payload.deadline
+        ? new Date(payload.deadline)
+        : null;
     }
-    
+
     // ✅ RECURRENCE VALIDATION & UPDATE
     if (payload.recurrenceType !== undefined) {
       if (!Object.values(Recurrence_Type).includes(payload.recurrenceType)) {
-        throw new BadRequestException(`Invalid recurrence type: ${payload.recurrenceType}`);
+        throw new BadRequestException(
+          `Invalid recurrence type: ${payload.recurrenceType}`,
+        );
       }
       updateData.recurrenceType = payload.recurrenceType;
     }
-    
+
     if (payload.recurrenceInterval !== undefined) {
       if (payload.recurrenceInterval < 1) {
         throw new BadRequestException('Recurrence interval must be at least 1');
       }
       updateData.recurrenceInterval = payload.recurrenceInterval;
     }
-    
+
     if (payload.recurrenceDays !== undefined) {
       if (payload.recurrenceDays.length > 0) {
         const invalidDays = payload.recurrenceDays.filter(
-          day => !Object.values(Day_Of_Week).includes(day as Day_Of_Week)
+          (day) => !Object.values(Day_Of_Week).includes(day),
         );
         if (invalidDays.length > 0) {
-          throw new BadRequestException(`Invalid recurrence days: ${invalidDays.join(', ')}`);
+          throw new BadRequestException(
+            `Invalid recurrence days: ${invalidDays.join(', ')}`,
+          );
         }
       }
-      updateData.recurrenceDays = payload.recurrenceDays as Day_Of_Week[];
+      updateData.recurrenceDays = payload.recurrenceDays;
     }
-    
+
     if (payload.recurrenceDayOfMonth !== undefined) {
-      if (payload.recurrenceDayOfMonth < 1 || payload.recurrenceDayOfMonth > 31) {
-        throw new BadRequestException('Recurrence day of month must be between 1 and 31');
+      if (
+        payload.recurrenceDayOfMonth < 1 ||
+        payload.recurrenceDayOfMonth > 31
+      ) {
+        throw new BadRequestException(
+          'Recurrence day of month must be between 1 and 31',
+        );
       }
       updateData.recurrenceDayOfMonth = payload.recurrenceDayOfMonth;
     }
-    
+
     if (payload.recurrenceEndDate !== undefined) {
-      updateData.recurrenceEndDate = payload.recurrenceEndDate 
-        ? new Date(payload.recurrenceEndDate) 
+      updateData.recurrenceEndDate = payload.recurrenceEndDate
+        ? new Date(payload.recurrenceEndDate)
         : null;
     }
 
@@ -150,16 +182,17 @@ export class TasksService {
   async deleteTask(taskId: number, userId: number) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new NotFoundException('Task not found');
-    if (task.userId !== userId) throw new ForbiddenException('Not authorized to delete this task');
-    
+    if (task.userId !== userId)
+      throw new ForbiddenException('Not authorized to delete this task');
+
     // ✅ CASCADE DELETE: Prisma handles subtasks via onDelete: Cascade
     await this.prisma.task.delete({ where: { id: taskId } });
-    
+
     // ✅ CLEANUP: Delete associated notifications (handled by Prisma onDelete: SetNull)
-    await this.prisma.notification.deleteMany({ 
-      where: { taskId } 
+    await this.prisma.notification.deleteMany({
+      where: { taskId },
     });
-    
+
     return { message: 'Task deleted successfully' };
   }
 
@@ -177,10 +210,7 @@ export class TasksService {
         //   take: 3,
         // },
       },
-      orderBy: [
-        { start_time: 'asc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ start_time: 'asc' }, { createdAt: 'desc' }],
     });
 
     if (!tasks.length) throw new NotFoundException('No tasks found');
@@ -193,16 +223,19 @@ export class TasksService {
       throw new BadRequestException(`Invalid status: ${status}`);
     }
 
-    const task = await this.prisma.task.findUnique({ 
+    const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       include: { user: true },
     });
-    
+
     if (!task) throw new NotFoundException('Task not found');
     if (task.userId !== userId) throw new ForbiddenException('Not authorized');
-    
+
     // ✅ CREATE NOTIFICATION FOR COMPLETION (future-ready)
-    if (status === Status_Enum.COMPLETED && task.status !== Status_Enum.COMPLETED) {
+    if (
+      status === Status_Enum.COMPLETED &&
+      task.status !== Status_Enum.COMPLETED
+    ) {
       // Notification creation will be handled by a dedicated notification service
       // This is a placeholder for future integration
       console.log(`Task ${taskId} completed - notification would be triggered`);
@@ -289,8 +322,8 @@ export class TasksService {
       },
       include: {
         task: {
-          include: { subtasks: true }
-        }
+          include: { subtasks: true },
+        },
       },
       orderBy: {
         occurrenceDate: 'asc',

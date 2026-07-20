@@ -1,7 +1,5 @@
-
-
 export enum StatusEnum {
-    Upcoming = "UPCOMING",
-    Inprogress = "INPROGRESS",
-    Completed = "COMPLETED"
+  Upcoming = 'UPCOMING',
+  Inprogress = 'INPROGRESS',
+  Completed = 'COMPLETED',
 }

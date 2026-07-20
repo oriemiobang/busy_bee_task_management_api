@@ -48,11 +48,16 @@ describe('NotificationsService', () => {
     it('should throw NotFoundException if notification not found', async () => {
       prisma.notification.findUnique.mockResolvedValueOnce(null);
 
-      await expect(service.ReadNotification(999, true, 1)).rejects.toThrow(NotFoundException);
+      await expect(service.ReadNotification(999, true, 1)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should mark notification as read', async () => {
-      prisma.notification.findUnique.mockResolvedValueOnce({ id: 1, userId: 1 });
+      prisma.notification.findUnique.mockResolvedValueOnce({
+        id: 1,
+        userId: 1,
+      });
       prisma.notification.update.mockResolvedValueOnce({ id: 1, isRead: true });
 
       const result = await service.ReadNotification(1, true, 1);

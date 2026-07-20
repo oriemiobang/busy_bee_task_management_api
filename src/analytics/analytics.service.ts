@@ -3,11 +3,7 @@ import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class AnalyticsService {
-    constructor(private prisma: PrismaService){}
-
-
-
-
+  constructor(private prisma: PrismaService) {}
 
   // =========================
   // DASHBOARD (MAIN ENTRY)
@@ -46,9 +42,7 @@ export class AnalyticsService {
       }),
 
       // ✅ Weekly overview (chart)
-      this.prisma.$queryRaw<
-        { day: string; count: number }[]
-      >`
+      this.prisma.$queryRaw<{ day: string; count: number }[]>`
         SELECT 
           TO_CHAR("updatedAt", 'Dy') AS day,
           COUNT(*)::int AS count
@@ -76,13 +70,11 @@ export class AnalyticsService {
     ]);
 
     const dailyGoalPercent =
-      todayTotal === 0
-        ? 0
-        : Math.round((todayCompleted / todayTotal) * 100);
+      todayTotal === 0 ? 0 : Math.round((todayCompleted / todayTotal) * 100);
 
     const lastWeekStart = new Date(weekStart);
     lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-   
+
     const lastWeekCompleted = await this.prisma.task.count({
       where: {
         userId,
@@ -91,10 +83,19 @@ export class AnalyticsService {
       },
     });
 
-    const thisWeekCompletedCount = weeklyOverview.reduce((sum, day) => sum + day.count, 0);
-    const insightPercent = lastWeekCompleted === 0
-      ? (thisWeekCompletedCount > 0 ? 100 : 0)
-      : Math.round(((thisWeekCompletedCount - lastWeekCompleted) / lastWeekCompleted) * 100);
+    const thisWeekCompletedCount = weeklyOverview.reduce(
+      (sum, day) => sum + day.count,
+      0,
+    );
+    const insightPercent =
+      lastWeekCompleted === 0
+        ? thisWeekCompletedCount > 0
+          ? 100
+          : 0
+        : Math.round(
+            ((thisWeekCompletedCount - lastWeekCompleted) / lastWeekCompleted) *
+              100,
+          );
 
     return {
       dailyGoalPercent,
@@ -118,9 +119,7 @@ export class AnalyticsService {
   // BEST DAY EVER
   // =========================
   async bestDay(userId: number) {
-    const result = await this.prisma.$queryRaw<
-      { date: Date; count: number }[]
-    >`
+    const result = await this.prisma.$queryRaw<{ date: Date; count: number }[]>`
       SELECT 
         DATE("updatedAt") AS date,
         COUNT(*)::int AS count
@@ -146,9 +145,7 @@ export class AnalyticsService {
   // STREAK (CONSECUTIVE DAYS)
   // =========================
   async calculateStreak(userId: number) {
-    const dates = await this.prisma.$queryRaw<
-      { date: Date }[]
-    >`
+    const dates = await this.prisma.$queryRaw<{ date: Date }[]>`
       SELECT DISTINCT DATE("updatedAt") AS date
       FROM "tasks"
       WHERE "userId" = ${userId}
@@ -157,7 +154,7 @@ export class AnalyticsService {
     `;
 
     let streak = 0;
-    let current = new Date();
+    const current = new Date();
     current.setHours(0, 0, 0, 0);
 
     for (const row of dates) {
@@ -176,9 +173,7 @@ export class AnalyticsService {
   // AVERAGE TASKS / DAY (SAFE)
   // =========================
   async averagePerDay(userId: number) {
-    const result = await this.prisma.$queryRaw<
-      { avg: number | null }[]
-    >`
+    const result = await this.prisma.$queryRaw<{ avg: number | null }[]>`
       SELECT 
         ROUND(
           COUNT(*)::numeric / NULLIF(COUNT(DISTINCT DATE("updatedAt")), 0),
@@ -191,6 +186,4 @@ export class AnalyticsService {
 
     return result[0]?.avg ?? 0;
   }
-
-
 }

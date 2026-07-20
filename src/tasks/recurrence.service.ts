@@ -28,10 +28,7 @@ export class RecurrenceService {
     const recurringTasks = await this.prisma.task.findMany({
       where: {
         recurrenceType: { not: Recurrence_Type.ONCE },
-        OR: [
-          { recurrenceEndDate: null },
-          { recurrenceEndDate: { gte: now } },
-        ],
+        OR: [{ recurrenceEndDate: null }, { recurrenceEndDate: { gte: now } }],
       },
     });
 
@@ -61,14 +58,20 @@ export class RecurrenceService {
           },
         });
       } catch (e) {
-        this.logger.error(`Error generating occurrence for task ${task.id} on ${date}: ${e.message}`);
+        this.logger.error(
+          `Error generating occurrence for task ${task.id} on ${date}: ${e.message}`,
+        );
       }
     }
   }
 
-  private calculateOccurrenceDates(task: Task, startDate: Date, endDate: Date): Date[] {
+  private calculateOccurrenceDates(
+    task: Task,
+    startDate: Date,
+    endDate: Date,
+  ): Date[] {
     const dates: Date[] = [];
-    
+
     // We start from the task's start_time or startDate, whichever is later
     let current = new Date(task.start_time);
     current.setHours(0, 0, 0, 0);
@@ -78,7 +81,10 @@ export class RecurrenceService {
       current = new Date(startDate);
     }
 
-    const end = task.recurrenceEndDate && task.recurrenceEndDate < endDate ? new Date(task.recurrenceEndDate) : new Date(endDate);
+    const end =
+      task.recurrenceEndDate && task.recurrenceEndDate < endDate
+        ? new Date(task.recurrenceEndDate)
+        : new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
     const interval = task.recurrenceInterval || 1;
@@ -87,7 +93,7 @@ export class RecurrenceService {
       if (this.matchesRecurrence(task, current)) {
         dates.push(new Date(current));
       }
-      
+
       // Advance to next day
       current.setDate(current.getDate() + 1);
     }
@@ -95,15 +101,20 @@ export class RecurrenceService {
     // For DAILY, if interval > 1, the above naive approach fails because it checks every day.
     // Let's refine DAILY with intervals.
     if (task.recurrenceType === Recurrence_Type.DAILY && interval > 1) {
-       return this.calculateDailyIntervalDates(task, startDate, end, interval);
+      return this.calculateDailyIntervalDates(task, startDate, end, interval);
     }
 
     return dates;
   }
 
-  private calculateDailyIntervalDates(task: Task, startDate: Date, endDate: Date, interval: number): Date[] {
+  private calculateDailyIntervalDates(
+    task: Task,
+    startDate: Date,
+    endDate: Date,
+    interval: number,
+  ): Date[] {
     const dates: Date[] = [];
-    let current = new Date(task.start_time);
+    const current = new Date(task.start_time);
     current.setHours(0, 0, 0, 0);
 
     // Fast forward to startDate by adding intervals
@@ -143,7 +154,10 @@ export class RecurrenceService {
 
       case Recurrence_Type.YEARLY:
         const start = new Date(task.start_time);
-        return date.getMonth() === start.getMonth() && date.getDate() === start.getDate();
+        return (
+          date.getMonth() === start.getMonth() &&
+          date.getDate() === start.getDate()
+        );
 
       default:
         return false;

@@ -1,107 +1,106 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { NotificationsDto } from './dto/notifications.dto';
 
 @Injectable()
 export class NotificationsService {
+  constructor(private Prisma: PrismaService) {}
 
-    constructor(private Prisma: PrismaService){}
+  async AddNotification(payload: NotificationsDto, userId: number) {
+    return await this.Prisma.notification.create({
+      data: {
+        title: payload.title,
+        description: payload.description,
+        isRead: payload.isRead ?? false,
+        type: payload.type,
+        triggerTime: payload.triggerTime ? new Date(payload.triggerTime) : null,
+        actionUrl: payload.actionUrl,
+        actionType: payload.actionType,
+        taskId: payload.taskId,
+        user: { connect: { id: userId } },
+      },
+      select: {
+        title: true,
+        description: true,
+      },
+    });
+  }
 
+  async ReadNotification(
+    notificationId: number,
+    readValue: boolean,
+    userId: number,
+  ) {
+    const notification = await this.Prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
 
-   async AddNotification(payload: NotificationsDto, userId: number){
-        return await this.Prisma.notification.create({
-            data: {
-                title: payload.title,
-                description: payload.description,
-                isRead: payload.isRead ?? false,
-                type: payload.type,
-                triggerTime: payload.triggerTime ? new Date(payload.triggerTime) : null,
-                actionUrl: payload.actionUrl,
-                actionType: payload.actionType,
-                taskId: payload.taskId,
-                user:{connect: {id: userId}} 
-            },
-            select: {
-                title: true,
-                description: true,
-            }
-        })
-
+    if (!notification) {
+      throw new NotFoundException('Notification Not Found!');
+    }
+    if (notification.userId !== userId) {
+      throw new ForbiddenException('Not authorized');
     }
 
-    async ReadNotification(notificationId: number, readValue: boolean, userId: number){
-        const notification =  await this.Prisma.notification.findUnique({
-            where: {id: notificationId}
-        })
+    return this.Prisma.notification.update({
+      where: {
+        id: notificationId,
+      },
+      data: {
+        isRead: readValue,
+      },
+      select: {
+        title: true,
+        description: true,
+        isRead: true,
+      },
+    });
+  }
 
-        if(!notification){
-            throw new NotFoundException("Notification Not Found!")
-        }
-        if (notification.userId !== userId) {
-            throw new ForbiddenException('Not authorized');
-        }
+  async GetNotifications(userId: number, page = 1, limit = 20) {
+    const notifications = await this.Prisma.notification.findMany({
+      where: { userId: userId },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
 
-        return this.Prisma.notification.update({
-            where: {
-                id: notificationId
-            },
-            data: {
-                isRead: readValue
-            },
-            select: {
-                title: true,
-                description: true,
-                isRead: true
-            }
-        })
+    return notifications;
+  }
+
+  async DeleteNotification(notificationId: number, userId: number) {
+    const notification = await this.Prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Notification Not Found!');
+    }
+    if (notification.userId !== userId) {
+      throw new ForbiddenException('Not authorized');
     }
 
+    await this.Prisma.notification.delete({
+      where: {
+        id: notificationId,
+      },
+    });
 
+    return 'Notification Deleted Succesffully!';
+  }
 
-  async GetNotifications(userId: number, page = 1, limit = 20){
-        const notifications = await this.Prisma.notification.findMany({
-            where: {userId: userId},
-            orderBy: {
-                createdAt: 'desc', 
-            },
-            skip: (page - 1) * limit,
-            take: limit,
-        })
+  async MarkAllRead(userId: number) {
+    return this.Prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+  }
 
-        return notifications;
-    }
-
-
-   async DeleteNotification(notificationId: number, userId: number){
-        const notification = await this.Prisma.notification.findUnique({
-            where:{ id:notificationId}
-        });
-
-        if(!notification){
-            throw new NotFoundException('Notification Not Found!')
-        }
-        if (notification.userId !== userId) {
-            throw new ForbiddenException('Not authorized');
-        }
-
-        await this.Prisma.notification.delete({
-            where: {
-                id: notificationId
-            }
-        });
-
-        return "Notification Deleted Succesffully!"
-        
-    }
-
-    async MarkAllRead(userId: number) {
-        return this.Prisma.notification.updateMany({
-            where: { userId, isRead: false },
-            data: { isRead: true },
-        });
-    }
-
-    // notification.scheduler.ts
-
-
+  // notification.scheduler.ts
 }

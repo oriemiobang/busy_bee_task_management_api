@@ -37,7 +37,10 @@ describe('TasksService', () => {
       expect(result).toEqual(mockTasks);
       expect(prisma.task.findMany).toHaveBeenCalledWith({
         where: { userId: 1 },
-        include: { subtasks: true, user: { select: { email: true, id: true, name: true } } },
+        include: {
+          subtasks: true,
+          user: { select: { email: true, id: true, name: true } },
+        },
         orderBy: [{ start_time: 'asc' }, { createdAt: 'desc' }],
       });
     });
@@ -64,7 +67,9 @@ describe('TasksService', () => {
     it('should throw NotFoundException if task does not exist or does not belong to user', async () => {
       prisma.task.findUnique.mockResolvedValueOnce(null);
 
-      await expect(service.deleteTask(999, 1)).rejects.toThrow(NotFoundException);
+      await expect(service.deleteTask(999, 1)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should delete task successfully', async () => {

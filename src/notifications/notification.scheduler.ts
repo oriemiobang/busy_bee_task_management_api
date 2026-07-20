@@ -20,7 +20,7 @@ export class NotificationScheduler {
     this.logger.debug('Running checkUpcomingDeadlines cron job');
     const now = new Date();
     const windowEnd = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
-    
+
     // Find upcoming tasks due in the next 30 minutes
     const tasks = await this.prisma.task.findMany({
       where: {
@@ -28,14 +28,14 @@ export class NotificationScheduler {
         deadline: { gte: now, lte: windowEnd },
       },
     });
-    
+
     for (const task of tasks) {
       // 1. Save in-app notification
       await this.notificationsService.AddNotification(
-        { 
-          title: `⏰ "${task.title}" is due soon`, 
-          description: `Due at ${task.deadline}`, 
-          isRead: false 
+        {
+          title: `⏰ "${task.title}" is due soon`,
+          description: `Due at ${task.deadline}`,
+          isRead: false,
         },
         task.userId,
       );

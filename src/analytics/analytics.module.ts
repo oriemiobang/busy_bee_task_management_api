@@ -4,9 +4,7 @@ import { AnalyticsService } from './analytics.service';
 import { AnalyticsController } from './analytics.controller';
 
 @Module({
-    controllers: [AnalyticsController],
-    providers: [
-
-        AnalyticsService]
+  controllers: [AnalyticsController],
+  providers: [AnalyticsService],
 })
 export class AnalyticsModule {}

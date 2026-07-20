@@ -32,9 +32,16 @@ export class NotificationProcessor {
     });
 
     if (user && user.fcmToken) {
-      await this.firebaseService.sendPushNotification(user.fcmToken, title, body, data);
+      await this.firebaseService.sendPushNotification(
+        user.fcmToken,
+        title,
+        body,
+        data,
+      );
     } else {
-      this.logger.debug(`User ${userId} has no FCM token, skipping push notification.`);
+      this.logger.debug(
+        `User ${userId} has no FCM token, skipping push notification.`,
+      );
     }
   }
 }

@@ -44,7 +44,10 @@ describe('UsersService', () => {
 
   describe('signup', () => {
     it('should throw BadRequestException if user already exists', async () => {
-      prisma.user.findFirst.mockResolvedValueOnce({ id: 1, email: 'test@test.com' });
+      prisma.user.findFirst.mockResolvedValueOnce({
+        id: 1,
+        email: 'test@test.com',
+      });
 
       await expect(
         service.signup({
@@ -112,7 +115,10 @@ describe('UsersService', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
       jwtService.signAsync.mockResolvedValueOnce('fake-jwt-token');
 
-      const result = await service.signin({ email: 'test@test.com', password: 'correct-pass' });
+      const result = await service.signin({
+        email: 'test@test.com',
+        password: 'correct-pass',
+      });
 
       expect(result.accessToken).toBe('fake-jwt-token');
     });
