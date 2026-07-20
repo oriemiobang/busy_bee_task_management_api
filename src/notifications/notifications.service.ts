@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { NotificationsDto } from './dto/notifications.dto';
 
@@ -14,6 +14,11 @@ export class NotificationsService {
                 title: payload.title,
                 description: payload.description,
                 isRead: payload.isRead ?? false,
+                type: payload.type,
+                triggerTime: payload.triggerTime ? new Date(payload.triggerTime) : null,
+                actionUrl: payload.actionUrl,
+                actionType: payload.actionType,
+                taskId: payload.taskId,
                 user:{connect: {id: userId}} 
             },
             select: {
@@ -24,13 +29,16 @@ export class NotificationsService {
 
     }
 
-    async ReadNotification(notificationId: number, readValue: boolean){
+    async ReadNotification(notificationId: number, readValue: boolean, userId: number){
         const notification =  await this.Prisma.notification.findUnique({
             where: {id: notificationId}
         })
 
         if(!notification){
             throw new NotFoundException("Notification Not Found!")
+        }
+        if (notification.userId !== userId) {
+            throw new ForbiddenException('Not authorized');
         }
 
         return this.Prisma.notification.update({
@@ -64,13 +72,16 @@ export class NotificationsService {
     }
 
 
-   async DeleteNotification(notificationId: number){
+   async DeleteNotification(notificationId: number, userId: number){
         const notification = await this.Prisma.notification.findUnique({
             where:{ id:notificationId}
         });
 
         if(!notification){
             throw new NotFoundException('Notification Not Found!')
+        }
+        if (notification.userId !== userId) {
+            throw new ForbiddenException('Not authorized');
         }
 
         await this.Prisma.notification.delete({

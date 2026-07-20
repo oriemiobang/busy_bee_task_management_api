@@ -205,7 +205,7 @@ export class AnalyticsService {
         SELECT 
           TO_CHAR("updatedAt", 'Dy') AS day,
           COUNT(*)::int AS count
-        FROM "Task"
+        FROM "tasks"
         WHERE "userId" = ${userId}
           AND status = 'COMPLETED'
           AND "updatedAt" >= ${weekStart}
@@ -233,12 +233,28 @@ export class AnalyticsService {
         ? 0
         : Math.round((todayCompleted / todayTotal) * 100);
 
+    const lastWeekStart = new Date(weekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+   
+    const lastWeekCompleted = await this.prisma.task.count({
+      where: {
+        userId,
+        status: 'COMPLETED',
+        updatedAt: { gte: lastWeekStart, lt: weekStart },
+      },
+    });
+
+    const thisWeekCompletedCount = weeklyOverview.reduce((sum, day) => sum + day.count, 0);
+    const insightPercent = lastWeekCompleted === 0
+      ? (thisWeekCompletedCount > 0 ? 100 : 0)
+      : Math.round(((thisWeekCompletedCount - lastWeekCompleted) / lastWeekCompleted) * 100);
+
     return {
       dailyGoalPercent,
       todayCompleted,
       todayTotal,
 
-      insightPercent: 20, // placeholder (week vs last week)
+      insightPercent,
 
       weeklyOverview,
 
@@ -261,7 +277,7 @@ export class AnalyticsService {
       SELECT 
         DATE("updatedAt") AS date,
         COUNT(*)::int AS count
-      FROM "Task"
+      FROM "tasks"
       WHERE "userId" = ${userId}
         AND status = 'COMPLETED'
       GROUP BY DATE("updatedAt")
@@ -287,7 +303,7 @@ export class AnalyticsService {
       { date: Date }[]
     >`
       SELECT DISTINCT DATE("updatedAt") AS date
-      FROM "Task"
+      FROM "tasks"
       WHERE "userId" = ${userId}
         AND status = 'COMPLETED'
       ORDER BY date DESC
@@ -321,7 +337,7 @@ export class AnalyticsService {
           COUNT(*)::numeric / NULLIF(COUNT(DISTINCT DATE("updatedAt")), 0),
           1
         ) AS avg
-      FROM "Task"
+      FROM "tasks"
       WHERE "userId" = ${userId}
         AND status = 'COMPLETED'
     `;

@@ -32,7 +32,7 @@ export class UsersService {
       private mailService: MailService
     ){}
 
-   async signup(payload: SignUpDto): Promise<{id: number; email: string}>{
+   async signup(payload: SignUpDto): Promise<any>{
 
     const existingUser = await this.prisma.user.findFirst({
         where: {
@@ -47,7 +47,7 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(payload.password, 10);
     payload.password = hashedPassword;
-        return  await this.prisma.user.create({
+    const newUser = await this.prisma.user.create({
             data: {
               name: payload.name,
               email: payload.email,
@@ -63,6 +63,13 @@ export class UsersService {
             }
 
         });
+    const token = await this.jwtService.signAsync({
+       id: newUser.id,
+       email: newUser.email,
+       name: newUser.name,
+       imageUrl: newUser.profile_image_url,
+    });
+    return { ...newUser, accessToken: token };
     }
 
    async  signin(signinDto: SigninDto): Promise<{accessToken: string}>{

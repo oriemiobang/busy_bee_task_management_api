@@ -20,8 +20,8 @@ export class NotificationsController {
 
     // PATCH /notifications/:id/read
     @Patch('/:id/read')
-    async ReadNotification(@Param('id') id: number, @Body('isRead') isRead = true){
-        return await this.notificationService.ReadNotification(+id, isRead);
+    async ReadNotification(@Req() req, @Param('id') id: number, @Body('isRead') isRead = true){
+        return await this.notificationService.ReadNotification(+id, isRead, req.user.id);
     }
 
     // PATCH /notifications/read-all
@@ -31,8 +31,8 @@ export class NotificationsController {
     }
 
     @Delete('/:id')
-    async DeleteNotification(@Param('id') id: number){
-        return await this.notificationService.DeleteNotification(+id);
+    async DeleteNotification(@Req() req, @Param('id') id: number){
+        return await this.notificationService.DeleteNotification(+id, req.user.id);
     }
 
 }
