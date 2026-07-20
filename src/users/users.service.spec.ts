@@ -4,8 +4,13 @@ import { PrismaService } from 'src/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from './mail.service';
 import { mockPrismaService } from 'src/prisma.mock';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -89,11 +94,11 @@ describe('UsersService', () => {
         email: 'test@test.com',
         password: 'hashed-password',
       });
-      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(() => Promise.resolve(false) as any);
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
 
       await expect(
         service.signin({ email: 'test@test.com', password: 'wrong-pass' }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should return accessToken on successful login', async () => {
@@ -104,7 +109,7 @@ describe('UsersService', () => {
         name: 'Test',
         profile_image_url: '',
       });
-      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(() => Promise.resolve(true) as any);
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
       jwtService.signAsync.mockResolvedValueOnce('fake-jwt-token');
 
       const result = await service.signin({ email: 'test@test.com', password: 'correct-pass' });
