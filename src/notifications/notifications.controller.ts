@@ -1,5 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
-// import { AuthGuard } from 'src/users/auth/auth.guard';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { NotificationsDto } from './dto/notifications.dto';
 import { NotificationsService } from './notifications.service';
 
@@ -8,25 +7,32 @@ export class NotificationsController {
 
     constructor(private notificationService: NotificationsService){}
 
-    @Post('/add-notification')
-   async AddNotification(@Body() body: NotificationsDto, @Req() req){
-        return await this.notificationService.AddNotification(body, req.user.id)
+    @Post('/')
+    async AddNotification(@Body() body: NotificationsDto, @Req() req){
+        return await this.notificationService.AddNotification(body, req.user.id);
     }
 
-    @Patch('/read-notification/:id')
-    async ReadNotification(@Param('id') id: number, @Body('isRead') body: boolean){
-        return await this.notificationService.ReadNotification(+id, body)
+    // GET /notifications?page=1&limit=20
+    @Get('/')
+    async GetNotifications(@Req() req, @Query('page') page = 1, @Query('limit') limit = 20){
+        return await this.notificationService.GetNotifications(req.user.id, +page, +limit);
     }
 
-    @Delete('/delete-notification/:id')
-   async DeleteNotification(@Param('id') id: number){
+    // PATCH /notifications/:id/read
+    @Patch('/:id/read')
+    async ReadNotification(@Param('id') id: number, @Body('isRead') isRead = true){
+        return await this.notificationService.ReadNotification(+id, isRead);
+    }
+
+    // PATCH /notifications/read-all
+    @Patch('/read-all')
+    async MarkAllRead(@Req() req){
+        return await this.notificationService.MarkAllRead(req.user.id);
+    }
+
+    @Delete('/:id')
+    async DeleteNotification(@Param('id') id: number){
         return await this.notificationService.DeleteNotification(+id);
     }
 
-    @Get('/get-notifications')
-   async GetNotification(@Req() req){
-        return await this.notificationService.GetNotifications(req.user.id)
-
-    }
-    
 }

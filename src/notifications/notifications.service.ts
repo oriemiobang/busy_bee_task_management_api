@@ -83,8 +83,14 @@ export class NotificationsService {
         
     }
 
-    // notification.scheduler.ts
+    async MarkAllRead(userId: number) {
+        return this.Prisma.notification.updateMany({
+            where: { userId, isRead: false },
+            data: { isRead: true },
+        });
+    }
 
+    // notification.scheduler.ts
 
 
 }

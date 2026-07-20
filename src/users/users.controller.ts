@@ -100,4 +100,32 @@ async googleMobileLogin(@Body('idToken') idToken: string) {
         return this.userService.updateFcmToken(req.user.id, fcmToken);
     }
 
+    @Post('/logout')
+    async logout(@Req() req) {
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1];
+        if (token) {
+            return this.userService.logout(token);
+        }
+        return { message: 'Logged out successfully' };
+    }
+
+    @Public()
+    @Post('/forgot-password')
+    async forgotPassword(@Body('email') email: string) {
+        if (!email) {
+            return { message: 'Email is required' };
+        }
+        return this.userService.forgotPassword(email);
+    }
+
+    @Public()
+    @Post('/reset-password')
+    async resetPassword(@Body() body: any) {
+        if (!body.token || !body.newPassword) {
+            return { message: 'Token and newPassword are required' };
+        }
+        return this.userService.resetPassword(body.token, body.newPassword);
+    }
+
 }

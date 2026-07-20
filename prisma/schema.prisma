@@ -60,9 +60,10 @@ model User {
   profile_image_url String?          @default("https://zraflqvymigtirrotmko.supabase.co/storage/v1/object/public/busy_bee_bucket/avatars/2/wanderercreative-blank-profile-picture-973460_1280.png")
   
   // Relations
-  tasks             Task[]           // Tasks assigned to user
-  createdTasks      Task[]           @relation("CreatedTasks") // Tasks created by user
-  notifications     Notification[]
+  tasks               Task[]           // Tasks assigned to user
+  createdTasks        Task[]           @relation("CreatedTasks") // Tasks created by user
+  notifications       Notification[]
+  passwordResetTokens PasswordResetToken[]
   
   // Timestamps
   createdAt         DateTime         @default(now())
@@ -171,4 +172,27 @@ model TaskOccurrence {
   @@index([occurrenceDate])
   @@unique([taskId, occurrenceDate])
   @@map("task_occurrences")
+}
+
+model BlacklistedToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  expiresAt DateTime
+
+  @@index([token])
+  @@map("blacklisted_tokens")
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
 }

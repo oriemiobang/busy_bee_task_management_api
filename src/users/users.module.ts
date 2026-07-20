@@ -9,6 +9,7 @@ import { JwtStrategy } from './auth/jwt.strategy';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { PassportModule } from '@nestjs/passport';
 import { GoogleStrategy } from './auth/google.strategy';
+import { MailService } from './mail.service';
 @Module({
   imports: [
     PassportModule,
@@ -27,7 +28,8 @@ import { GoogleStrategy } from './auth/google.strategy';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
-    GoogleStrategy
+    GoogleStrategy,
+    MailService,
   ],
 })
 export class UsersModule {}

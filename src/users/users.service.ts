@@ -4,9 +4,10 @@ import { SigninDto } from './dto/signin.dto';
 import { PrismaService } from 'src/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import { supabase } from 'src/supabase/supabase.client';
 import { OAuth2Client } from 'google-auth-library';
+import { MailService } from './mail.service';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Define MulterFile type
@@ -25,7 +26,11 @@ export class UsersService {
     private bucket = process.env.SUPABASE_BUCKET!;
     
 
-    constructor(private prisma: PrismaService, private jwtService: JwtService){}
+    constructor(
+      private prisma: PrismaService, 
+      private jwtService: JwtService,
+      private mailService: MailService
+    ){}
 
    async signup(payload: SignUpDto): Promise<{id: number; email: string}>{
 
@@ -352,6 +357,77 @@ async updateFcmToken(userId: number, fcmToken: string) {
     data: { fcmToken },
     select: { id: true },
   });
+}
+
+async logout(token: string) {
+  const decoded = this.jwtService.decode(token) as any;
+  if (decoded && decoded.exp) {
+    const expiresAt = new Date(decoded.exp * 1000);
+    // Add token to blacklist
+    await this.prisma.blacklistedToken.create({
+      data: {
+        token,
+        expiresAt,
+      },
+    });
+  }
+  return { message: 'Logged out successfully' };
+}
+
+async forgotPassword(email: string) {
+  const user = await this.prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    // Return success to prevent email enumeration attacks
+    return { message: 'If that email is registered, a password reset link has been sent.' };
+  }
+
+  // Generate 32-byte hex token
+  const resetToken = randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+
+  // Save token to DB
+  await this.prisma.passwordResetToken.create({
+    data: {
+      token: resetToken,
+      userId: user.id,
+      expiresAt,
+    },
+  });
+
+  // Send email
+  await this.mailService.sendPasswordResetEmail(user.email, resetToken);
+
+  return { message: 'If that email is registered, a password reset link has been sent.' };
+}
+
+async resetPassword(token: string, newPassword: string) {
+  const resetRecord = await this.prisma.passwordResetToken.findUnique({
+    where: { token },
+  });
+
+  if (!resetRecord || resetRecord.expiresAt < new Date()) {
+    throw new BadRequestException('Invalid or expired password reset token');
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update password
+  await this.prisma.user.update({
+    where: { id: resetRecord.userId },
+    data: { password: hashedPassword },
+  });
+
+  // Delete the used token (and any other expired tokens for cleanup)
+  await this.prisma.passwordResetToken.deleteMany({
+    where: {
+      OR: [
+        { id: resetRecord.id },
+        { expiresAt: { lt: new Date() } },
+      ],
+    },
+  });
+
+  return { message: 'Password has been successfully reset' };
 }
 
 }
