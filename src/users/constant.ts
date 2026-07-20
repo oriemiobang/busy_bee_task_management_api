@@ -1,3 +1,3 @@
 export const jwtConstants = {
-    secret : "Atiango-Task-Secret-Key"
+    secret: process.env.JWT_SECRET || "Atiango-Task-Secret-Key"
 }

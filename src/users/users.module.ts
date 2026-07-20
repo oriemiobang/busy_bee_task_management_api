@@ -8,7 +8,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtStrategy } from './auth/jwt.strategy';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { PassportModule } from '@nestjs/passport';
-import { GoogleStrategy } from './auth/goole.strategy';
+import { GoogleStrategy } from './auth/google.strategy';
 @Module({
   imports: [
     PassportModule,

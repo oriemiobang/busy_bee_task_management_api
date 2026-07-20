@@ -50,20 +50,17 @@ export class NotificationsService {
 
 
 
-  async  GetNotifications(userId: number){
-        const notifications= await this.Prisma.notification.findMany({
-            where: {id: userId},
+  async GetNotifications(userId: number, page = 1, limit = 20){
+        const notifications = await this.Prisma.notification.findMany({
+            where: {userId: userId},
             orderBy: {
-            createdAt: 'desc', 
-    },
+                createdAt: 'desc', 
+            },
+            skip: (page - 1) * limit,
+            take: limit,
         })
 
-        if(!notifications.length){
-            throw new NotFoundException("No Notification Found!")
-        }
-
-        return  notifications;
-
+        return notifications;
     }
 
 

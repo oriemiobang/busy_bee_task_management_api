@@ -74,11 +74,16 @@ export class UsersController {
     }
 
     // google sign in 
-    @Get()
+    @Get('google')
     @UseGuards(AuthGuard('google'))
     googleAuth(@Req() req) {
         // initiates the Google OAuth2 login flow
+    }
 
+    @Get('google/callback')
+    @UseGuards(AuthGuard('google'))
+    async googleAuthCallback(@Req() req) {
+        return this.userService.googleLogin(req);
     }
 
 
