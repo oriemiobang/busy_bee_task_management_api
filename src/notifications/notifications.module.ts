@@ -1,10 +1,7 @@
 import { Module } from '@nestjs/common';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
-import { PrismaService } from 'src/prisma.service';
-import { JwtStrategy } from 'src/users/auth/jwt.strategy';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from 'src/users/auth/jwt-auth.guard';
+
 import { BullModule } from '@nestjs/bull';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationScheduler } from './notification.scheduler';
@@ -27,13 +24,7 @@ import { FirebaseService } from './firebase.service';
     ],
     controllers: [NotificationsController],
     providers: [
-      JwtStrategy,
-      {
-        provide: APP_GUARD,
-        useClass: JwtAuthGuard,
-      },
       NotificationsService, 
-      PrismaService,
       NotificationScheduler,
       NotificationProcessor,
       FirebaseService,

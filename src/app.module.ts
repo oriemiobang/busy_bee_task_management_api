@@ -8,9 +8,11 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ProfileModule } from './profile/profile.module';
 
 import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from './prisma.module';
 
 @Module({
   imports: [
+    PrismaModule,
     ConfigModule.forRoot({ isGlobal: true }),
     UsersModule,
     TasksModule,

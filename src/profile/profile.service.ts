@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class ProfileService {
       },
     });
 
-    if (!profile) throw new Error('User not found');
+    if (!profile) throw new NotFoundException('User not found');
     return profile;
   }
 
