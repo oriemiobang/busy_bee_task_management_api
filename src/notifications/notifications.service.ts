@@ -21,7 +21,7 @@ export class NotificationsService {
         actionUrl: payload.actionUrl,
         actionType: payload.actionType,
         taskId: payload.taskId,
-        user: { connect: { id: userId } },
+        userId: userId,
       },
       select: {
         title: true,
